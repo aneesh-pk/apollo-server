@@ -1,4 +1,8 @@
 const {ApolloServer, gql} = require('apollo-server');
+const {
+    login,
+    createUser
+} = require("./models/mutations/mutation");
 
 // This is a (sample) collection of books we'll be able to query
 // the GraphQL server for.  A more complete example might fetch
@@ -19,11 +23,21 @@ const typeDefs = gql`
     password: String
     email: String
   }
+  
+  type LoginResponse {
+    success: Boolean
+    info: String
+    user: User
+  }
 
   # The "Query" type is the root of all GraphQL queries.
   # (A "Mutation" type will be covered later on.)
   type Query {
     users: [User]
+  }
+  
+  type Mutation{
+    login(username: String, password: String): LoginResponse
   }
 `;
 
@@ -31,12 +45,17 @@ const typeDefs = gql`
 // schema.  We'll retrieve books from the "books" array above.
 const resolvers = {
     Query: {
-        users: () => Users.collection().fetch().then(function(user){
+        users: () => Users.collection().fetch().then(function (user) {
             return user.toJSON()
         }),
     },
     Mutation: {
-        login: (gql, {username, password}) => login(username, password)
+        login: (gql, {username, password}) => login(username, password).then(user => {
+            return user;
+        }),
+        create_user: (gql, {username, password, email}) => createUser(username, password, email).then(user => {
+            return user;
+        })
     },
 };
 
