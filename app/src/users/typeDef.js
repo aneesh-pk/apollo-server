@@ -42,6 +42,11 @@ const typeDef = gql`
     info: String
     user : User
   }
+  
+  type DeleteUserResponse {
+    success: Boolean
+    info: String
+  }
 
   # The "Query" type is the root of all GraphQL queries.
   # (A "Mutation" type will be covered later on.)
@@ -53,6 +58,7 @@ const typeDef = gql`
     login(user: loginInput): LoginResponse,
     create_user(user: userRegisterInput): CreateUserResponse
     update_user(user: userUpdateInput): UpdateUserResponse @auth
+    delete_user: DeleteUserResponse @auth
   }
 `;
 

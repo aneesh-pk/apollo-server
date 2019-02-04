@@ -1,5 +1,5 @@
 const { User } = require("./User");
-const { login, createUser, updateUser } = require("./mutations");
+const { login, createUser, updateUser, deleteUser } = require("./mutations");
 
 const resolvers = {
     Query: {
@@ -19,6 +19,9 @@ const resolvers = {
         update_user: (gql, { user }, context, info) => updateUser(context.user, user).then(response => {
             return response;
         }),
+        delete_user: (gql, args, context, info) => deleteUser(context.user).then(response => {
+            return response;
+        })
 
     },
 };
