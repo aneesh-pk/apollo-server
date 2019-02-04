@@ -1,7 +1,7 @@
 var bookshelf = require("../config/bookshelf");
 
-var UserFiles = bookshelf.Model.extend({
+var UserFile = bookshelf.Model.extend({
     tableName: 'files',
 });
 
-module.exports.UserFiles = UserFiles;
+module.exports.UserFile = UserFile;
