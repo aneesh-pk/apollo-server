@@ -1,5 +1,6 @@
 const { ApolloServer, gql } = require("apollo-server");
 const users = require("./app/src/users");
+const userFiles = require("./app/src/userFiles");
 const { AuthDirective } = require("./app/src/directives/requireAuthDirective");
 
 const typeDef = gql`
@@ -9,8 +10,8 @@ const typeDef = gql`
 `;
 
 const server = new ApolloServer({
-  typeDefs: [typeDef, users.typeDef],
-  resolvers: [users.resolvers],
+  typeDefs: [typeDef, users.typeDef, userFiles.typeDef],
+  resolvers: [users.resolvers, userFiles.resolvers],
   schemaDirectives: {
     auth: AuthDirective,
   },

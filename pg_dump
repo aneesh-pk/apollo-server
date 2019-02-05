@@ -12,5 +12,5 @@ CREATE TABLE files(
     id serial PRIMARY KEY,
     user_id integer NOT NULL,
     name VARCHAR (355) NOT NULL,
-    type VARCHAR (355)
+    mime VARCHAR (355)
 );
