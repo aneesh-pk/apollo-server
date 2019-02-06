@@ -8,9 +8,11 @@ const USER_CREATE_ERROR = 'User already exists';
 const USER_UPDATE_ERROR = 'User data not updated';
 const USER_DELETE_ERROR = 'User not deleted';
 
-const {User} = require("./User");
-const {validateLoginSchema, validateUserRegisterSchema, validateUserUpdateSchema} = require("./validations");
-const {encryptPassword, comparePassword} = require("../utils/misc");
+const { User } = require("./User");
+const { UserFile } = require("../userFiles/UserFile");
+const { FBlob } = require("../files/mongo");
+const { validateLoginSchema, validateUserRegisterSchema, validateUserUpdateSchema } = require("./validations");
+const { encryptPassword, comparePassword } = require("../utils/misc");
 const jwt = require('jsonwebtoken');
 const fs = require('fs');
 
@@ -19,7 +21,7 @@ const login = async (user) => {
     var requestHasError = await validateLoginSchema(user);
     if (!requestHasError) {
         var hash = await encryptPassword(user.password);
-        return User.query({where: {"email": user.email}})
+        return User.query({ where: { "email": user.email } })
             .fetch()
             .then(db_user => db_user.toJSON())
             .then(async (db_user) => {
@@ -27,12 +29,12 @@ const login = async (user) => {
                 if (password_verified)
                     return db_user;
                 else
-                    throw ({success: false})
+                    throw ({ success: false })
             })
             .then(db_user => {
                 return {
                     success: true,
-                    token: jwt.sign(db_user, fs.readFileSync('private.key'), {expiresIn: '10h'}),
+                    token: jwt.sign(db_user, fs.readFileSync('private.key'), { expiresIn: '10h' }),
                     info: USER_LOGIN_SUCCESS,
                     user: db_user
                 }
@@ -59,7 +61,7 @@ const createUser = async (user) => {
     var requestHasError = await validateUserRegisterSchema(user);
     if (!requestHasError) {
         var hash = await encryptPassword(user.password);
-        return new User({name: user.name, password: hash, email: user.email})
+        return new User({ name: user.name, password: hash, email: user.email })
             .save()
             .then((user) => {
                 return {
@@ -87,8 +89,8 @@ const createUser = async (user) => {
 const updateUser = async (db_user, input) => {
     var requestHasError = await validateUserUpdateSchema(input);
     if (!requestHasError) {
-        return User.where({id: db_user.id})
-            .save(input, {method: 'update', patch: true})
+        return User.where({ id: db_user.id })
+            .save(input, { method: 'update', patch: true })
             .then(user => user.refresh())
             .then(user => user.toJSON())
             .then((user) => {
@@ -114,12 +116,46 @@ const updateUser = async (db_user, input) => {
     });
 };
 
+const userFileIdList = (userFiles) => {
+    let idList = [];
+    return new Promise((resolve) => {
+        if (userFiles.length > 0) {
+            userFiles.map((userFile, index) => {
+                idList.push(userFile.id);
+                if (index === (userFiles.length - 1))
+                    resolve(idList);
+            });
+
+        } else
+            resolve([]);
+    })
+}
+
+const deleteUserFiles = (db_user) => {
+    return UserFile.where({ user_id: db_user.id }).fetchAll()
+        .then((userFiles) => userFiles.toJSON())
+        .then((userFiles) => userFileIdList(userFiles))
+        .then(filesIdList => {
+            return FBlob.deleteMany({ id: { $in: filesIdList } })
+        })
+        .then(() => {
+            return UserFile.where({ user_id: db_user.id }).destroy();
+        }).catch(err => {
+            switch (err.message) {
+                case "No Rows Deleted":
+                    return true;
+                default:
+                    throw err;
+            }
+        });
+}
+
 const deleteUser = async (db_user) => {
-    //todo - delete user files
-    return User.where({id: db_user.id})
-        .destroy()
-        .then()
-        .then((user) => {
+    deleteUserFiles(db_user)
+        .then(() => {
+            return User.where({ id: db_user.id }).destroy()
+        })
+        .then(() => {
             return {
                 success: true,
                 info: USER_DELETE_SUCCESS
@@ -130,8 +166,9 @@ const deleteUser = async (db_user) => {
                     success: false,
                     info: USER_DELETE_ERROR
                 }
-            );
+            )
         });
+
 };
 
 
